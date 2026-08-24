@@ -1,18 +1,21 @@
 // Server-rendered pages: homepage, /docs, robots.txt, sitemap.xml.
 // Deliberately framework-free: static HTML + a few lines of inline CSS,
-// with light/dark support via prefers-color-scheme.
+// with light/dark support via prefers-color-scheme and copy buttons
+// added by a tiny inline script.
 
 const EXAMPLE_ORIGIN = 'https://api-example.com'
 
 const CSS = `
 :root {
-  --bg: #ffffff; --fg: #1a1a1a; --muted: #5c5c5c;
-  --accent: #0a7ea4; --border: #e4e4e7; --code-bg: #f6f7f9;
+  --bg: #ffffff; --fg: #18181b; --muted: #5f6470;
+  --accent: #0a7ea4; --accent-soft: rgba(10, 126, 164, 0.10);
+  --border: #e4e4e7; --code-bg: #f6f7f9;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1115; --fg: #e6e6e6; --muted: #9a9a9a;
-    --accent: #4cc2ff; --border: #26292f; --code-bg: #161a20;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0ac;
+    --accent: #4cc2ff; --accent-soft: rgba(76, 194, 255, 0.12);
+    --border: #26292f; --code-bg: #161a20;
   }
 }
 * { box-sizing: border-box; }
@@ -21,27 +24,68 @@ body {
   margin: 0; background: var(--bg); color: var(--fg);
   font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-main { max-width: 780px; margin: 0 auto; padding: 56px 20px 80px; }
-h1 { font-size: clamp(30px, 6vw, 46px); letter-spacing: -0.03em; line-height: 1.1; margin: 0 0 10px; }
-h2 { font-size: 22px; margin: 44px 0 12px; letter-spacing: -0.01em; }
-h3 { font-size: 17px; margin: 30px 0 8px; }
+main { max-width: 820px; margin: 0 auto; padding: 32px 20px 80px; }
+h1 { font-size: clamp(30px, 6.5vw, 50px); letter-spacing: -0.03em; line-height: 1.08; margin: 0 0 14px; font-weight: 800; }
+h2 { font-size: 21px; margin: 44px 0 14px; letter-spacing: -0.01em; }
+h3 { font-size: 16px; margin: 30px 0 8px; }
 p { margin: 0 0 16px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-.tagline { font-size: 19px; color: var(--muted); margin: 0 0 30px; }
+.accent { color: var(--accent); }
+.quiet { color: var(--muted); }
+
+/* header */
+.site-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 52px; }
+.brand { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; font-size: 17px; letter-spacing: -0.02em; color: var(--fg); }
+.brand-accent { color: var(--accent); }
+.site-nav a { margin-left: 18px; font-size: 14px; }
+
+/* hero */
+.hero { margin-bottom: 12px; }
+.eyebrow { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+.tagline { font-size: 18px; color: var(--muted); max-width: 600px; }
+
+/* terminal */
+.terminal { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 30px 0 44px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07); }
+.terminal-bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: var(--code-bg); border-bottom: 1px solid var(--border); }
+.dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+.dot-red { background: #ff5f57; } .dot-yellow { background: #febc2e; } .dot-green { background: #28c840; }
+.terminal-title { margin-left: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; color: var(--muted); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.terminal pre { border: none; border-radius: 0; margin: 0; }
+
+/* code */
 pre {
-  background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px;
-  padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.55;
-  margin: 12px 0 20px;
+  position: relative; background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.55; margin: 12px 0 20px;
 }
 code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; font-size: 0.88em; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 20px 0 24px; }
-.grid a { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; }
-.grid a:hover { border-color: var(--accent); text-decoration: none; }
-table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 12px 0 24px; }
-th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
-th { background: var(--code-bg); font-weight: 600; }
+.copy-btn {
+  position: absolute; top: 8px; right: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--muted); cursor: pointer; opacity: 0.85;
+}
+.copy-btn:hover { color: var(--fg); border-color: var(--accent); opacity: 1; }
+
+/* pills */
+.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.pills a { border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13.5px; color: var(--fg); }
+.pills a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+
+/* cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.card { border: 1px solid var(--border); border-radius: 12px; padding: 18px 18px 16px; background: var(--accent-soft); border-color: transparent; }
+.card h3 { margin: 0 0 8px; font-size: 15px; }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+
+/* endpoint cards */
+.endpoint-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 10px; margin: 16px 0; }
+.endpoint-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 5px; color: var(--fg); }
+.endpoint-card:hover { border-color: var(--accent); text-decoration: none; }
+.endpoint-path { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; font-size: 15px; }
+.endpoint-desc { font-size: 13px; color: var(--muted); }
+
+/* badges & tables (docs) */
 .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-right: 8px; vertical-align: 2px; letter-spacing: 0.02em; }
 .badge.get { background: #dbeafe; color: #1d4ed8; }
 .badge.post { background: #dcfce7; color: #15803d; }
@@ -49,10 +93,28 @@ th { background: var(--code-bg); font-weight: 600; }
 .badge.patch { background: #fae8ff; color: #a21caf; }
 .badge.delete { background: #fee2e2; color: #b91c1c; }
 .badge.all { background: #e0e7ff; color: #4338ca; }
-.endpoint { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 12px 0 24px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: var(--code-bg); font-weight: 600; }
+.endpoint { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 600; }
+
 footer { color: var(--muted); font-size: 13.5px; margin-top: 56px; border-top: 1px solid var(--border); padding-top: 18px; }
-.quiet { color: var(--muted); }
 `
+
+const COPY_SCRIPT = `<script>
+document.querySelectorAll('pre').forEach(function (pre) {
+  var btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'copy-btn'; btn.textContent = 'Copy';
+  btn.setAttribute('aria-label', 'Copy code to clipboard');
+  btn.addEventListener('click', function () {
+    navigator.clipboard.writeText(pre.textContent).then(function () {
+      btn.textContent = 'Copied';
+      setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+    });
+  });
+  pre.appendChild(btn);
+});
+</script>`
 
 function layout(opts: {
   title: string
@@ -79,27 +141,80 @@ function layout(opts: {
 <main>
 ${opts.body}
 </main>
+${COPY_SCRIPT}
 </body>
 </html>`
+}
+
+function siteHeader(active: 'home' | 'docs'): string {
+  return `
+<header class="site-head">
+  <a class="brand" href="/">api-example<span class="brand-accent">.com</span></a>
+  <nav class="site-nav">
+    <a href="/docs"${active === 'docs' ? ' style="text-decoration:underline"' : ''}>Docs</a>
+    <a href="#endpoints">Endpoints</a>
+  </nav>
+</header>`
 }
 
 // ---------------------------------------------------------------------------
 // Homepage
 // ---------------------------------------------------------------------------
 
+interface HomeEndpoint {
+  method: 'GET' | 'POST' | 'ALL'
+  path: string
+  desc: string
+}
+
+const HOME_ENDPOINTS: HomeEndpoint[] = [
+  { method: 'GET', path: '/json', desc: 'Stable JSON example' },
+  { method: 'GET', path: '/users', desc: 'List of example users' },
+  { method: 'GET', path: '/users/1', desc: 'Single example user' },
+  { method: 'GET', path: '/posts', desc: 'List of example posts' },
+  { method: 'GET', path: '/posts/1', desc: 'Single example post' },
+  { method: 'GET', path: '/status/404', desc: 'Return any HTTP status' },
+  { method: 'GET', path: '/delay/3', desc: 'Simulate slow network' },
+  { method: 'GET', path: '/headers', desc: 'Echo request headers' },
+  { method: 'GET', path: '/ip', desc: 'Echo client IP' },
+  { method: 'GET', path: '/uuid', desc: 'Fresh UUIDv4' },
+  { method: 'ALL', path: '/anything', desc: 'Echo any request' },
+]
+
+function endpointAnchor(path: string): string {
+  return path.replace(/[^a-zA-Z0-9]+/g, '-')
+}
+
 export function homePage(origin: string): string {
   const canonical = `${origin}/`
+  const endpointCards = HOME_ENDPOINTS.map(
+    (e) => `
+  <a class="endpoint-card" href="/docs#${endpointAnchor(e.path)}">
+    <span><span class="badge ${e.method === 'GET' ? 'get' : 'all'}">${e.method}</span><span class="endpoint-path">${e.path}</span></span>
+    <span class="endpoint-desc">${e.desc}</span>
+  </a>`,
+  ).join('')
+
   return layout({
     title: 'api-example.com — An example API that actually works',
     description:
       'A free, public example API for docs, demos, tests and tutorials. Stop inventing fake API URLs — use api-example.com.',
     canonical,
     body: `
-<h1>api-example.com</h1>
-<p class="tagline">An example API that actually works.<br>
-Stop inventing fake API URLs. Use api-example.com in docs, demos, tests, and tutorials.</p>
+${siteHeader('home')}
 
-<pre><code>$ curl ${EXAMPLE_ORIGIN}/users/1
+<section class="hero">
+  <p class="eyebrow"><span class="accent">api-example.com</span> — a free public example API</p>
+  <h1>An example API that actually works.</h1>
+  <p class="tagline">Stop inventing fake API URLs. Use api-example.com in docs, demos, tests, and tutorials.</p>
+</section>
+
+<div class="terminal">
+  <div class="terminal-bar">
+    <span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span>
+    <span class="terminal-title">GET ${EXAMPLE_ORIGIN}/users/1</span>
+  </div>
+  <pre><code>$ curl ${EXAMPLE_ORIGIN}/users/1
 
 {
   "id": 1,
@@ -107,22 +222,53 @@ Stop inventing fake API URLs. Use api-example.com in docs, demos, tests, and tut
   "username": "ada",
   "email": "ada@example.com"
 }</code></pre>
-
-<h2>Quick start</h2>
-<div class="grid">
-  <a href="/users">/users</a>
-  <a href="/posts">/posts</a>
-  <a href="/json">/json</a>
-  <a href="/status/404">/status/404</a>
-  <a href="/delay/3">/delay/3</a>
-  <a href="/headers">/headers</a>
-  <a href="/anything">/anything</a>
 </div>
-<p>Echo any request with <a href="/anything">/anything</a>, or read the full
-<a href="/docs">documentation</a>.</p>
 
-<footer>Public example API · Free · No accounts, no tracking, no data collection.
-<a href="/docs">Docs</a> · <a href="/sitemap.xml">Sitemap</a></footer>`,
+<section class="quick">
+  <h2>Try it now</h2>
+  <div class="pills">
+    <a href="/users">/users</a>
+    <a href="/posts">/posts</a>
+    <a href="/json">/json</a>
+    <a href="/status/404">/status/404</a>
+    <a href="/delay/3">/delay/3</a>
+    <a href="/headers">/headers</a>
+    <a href="/anything">/anything</a>
+  </div>
+</section>
+
+<section class="why">
+  <h2>Why api-example.com?</h2>
+  <div class="cards">
+    <div class="card">
+      <h3>It actually works</h3>
+      <p>Every endpoint responds with real JSON — no 404s, no HTML error pages. Paste it in your docs and it just works.</p>
+    </div>
+    <div class="card">
+      <h3>Free for everyone</h3>
+      <p>No accounts, no API keys, no signup. Call it from curl, browsers, CI pipelines, or server code.</p>
+    </div>
+    <div class="card">
+      <h3>CORS enabled</h3>
+      <p><code>Access-Control-Allow-Origin: *</code> — call it directly from any frontend, CodePen, or local dev page.</p>
+    </div>
+    <div class="card">
+      <h3>Stable URLs</h3>
+      <p>Endpoint paths are treated as public API and won't change. Safe to link from READMEs and Stack Overflow.</p>
+    </div>
+  </div>
+</section>
+
+<section id="endpoints" class="endpoints">
+  <h2>Endpoints</h2>
+  <div class="endpoint-grid">
+${endpointCards}
+  </div>
+  <p class="quiet">Full reference with curl, JavaScript and Python examples → <a href="/docs">the docs</a>.</p>
+</section>
+
+<footer>api-example.com · Free public example API · No accounts, no tracking, no data collection.<br>
+<a href="/docs">Docs</a> · <a href="/robots.txt">robots.txt</a> · <a href="/sitemap.xml">Sitemap</a></footer>`,
   })
 }
 
@@ -284,7 +430,7 @@ const BADGE_CLASS: Record<EndpointDoc['method'], string> = {
 
 function endpointSection(doc: EndpointDoc): string {
   return `
-<h3 id="${doc.path.replace(/[^a-zA-Z0-9]+/g, '-')}">
+<h3 id="${endpointAnchor(doc.path)}">
   <span class="badge ${BADGE_CLASS[doc.method]}">${doc.method}</span>
   <span class="endpoint">${doc.path}</span>
 </h3>
@@ -307,7 +453,9 @@ export function docsPage(origin: string): string {
       'Full API reference for api-example.com: /json, /users, /posts, /status/:code, /delay/:seconds, /headers, /ip, /uuid and /anything with curl, fetch and Python examples.',
     canonical,
     body: `
-<h1>api-example.com — API Docs</h1>
+${siteHeader('docs')}
+
+<h1>API Documentation</h1>
 <p class="tagline">A free example API that actually works. Every endpoint below is live
 — open any link or run the <code>curl</code> command.</p>
 
@@ -388,7 +536,7 @@ browser page, CodePen, or local frontend without a proxy.</p>
 <code>/foo</code> or <code>/article</code> return a friendly JSON payload instead of a
 broken link, so old documentation keeps working.</p>
 
-<footer>Public example API · Free · No accounts, no tracking, no data collection.
+<footer>api-example.com · Free public example API · No accounts, no tracking, no data collection.<br>
 <a href="/">Home</a> · <a href="/sitemap.xml">Sitemap</a></footer>`,
   })
 }
