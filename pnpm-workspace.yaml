@@ -5,6 +5,8 @@ allowBuilds:
   lightningcss: true
   sharp: true
   workerd: true
+minimumReleaseAgeExclude:
+  - hono@4.13.4
 onlyBuiltDependencies:
   - esbuild
   - lightningcss
