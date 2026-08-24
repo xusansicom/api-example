@@ -1,4 +1,5 @@
 import type { Context, Hono } from 'hono'
+import { faviconIcoBytes } from '../favicon'
 import { docsPage, homePage, robotsTxt, sitemapXml } from '../html'
 
 export function registerPageRoutes(app: Hono) {
@@ -10,6 +11,12 @@ export function registerPageRoutes(app: Hono) {
   app.get('/sitemap.xml', (c) =>
     c.body(sitemapXml(origin(c)), 200, {
       'Content-Type': 'application/xml; charset=utf-8',
+    }),
+  )
+  app.get('/favicon.ico', (c) =>
+    c.body(faviconIcoBytes(), 200, {
+      'Content-Type': 'image/x-icon',
+      'Cache-Control': 'public, max-age=86400',
     }),
   )
 }

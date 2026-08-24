@@ -341,6 +341,23 @@ describe('pages and SEO', () => {
     expect(text).toContain('<loc>')
     expect(text).toContain('/users')
   })
+
+  it('serves the favicon as a valid ICO', async () => {
+    const res = await request('/favicon.ico')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toBe('image/x-icon')
+    const buf = await res.arrayBuffer()
+    const bytes = new Uint8Array(buf)
+    // ICO magic: 00 00 01 00 (reserved, type=icon)
+    expect(bytes.subarray(0, 4)).toEqual(new Uint8Array([0, 0, 1, 0]))
+    // two frames (32px + 16px)
+    expect(bytes[4]).toBe(2)
+  })
+
+  it('links the favicon from the homepage', async () => {
+    const html = await (await request('/')).text()
+    expect(html).toContain('<link rel="icon" type="image/x-icon" href="/favicon.ico">')
+  })
 })
 
 describe('rate limiting', () => {

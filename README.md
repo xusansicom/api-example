@@ -93,7 +93,10 @@ The Worker serves everything — no Pages project needed.
 │       ├── pages.ts      # / /docs /robots.txt /sitemap.xml
 │       └── fallback.ts   # legacy path fallback + scanner 404
 ├── test/
-│   └── app.test.ts       # 38 tests covering every endpoint
+│   └── app.test.ts       # 40 tests covering every endpoint
+├── scripts/
+│   └── gen-favicon.mjs   # regenerates src/favicon.ts (base64 ICO, pure Node)
+├── src/favicon.ts        # generated favicon bytes (32px + 16px ICO)
 ├── wrangler.jsonc        # Worker config
 ├── tsconfig.json         # TypeScript strict
 ├── vitest.config.ts
